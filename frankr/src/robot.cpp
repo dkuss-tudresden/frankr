@@ -23,10 +23,12 @@ Robot::Robot(const std::string &name, double dynamic_rel): Robot(name) {
 }
 
 void Robot::stateCallback(const franka_msgs::FrankaState& msg) {
-  if (msg.current_errors.cartesian_reflex) {
-    has_reflex_error = true;
-    ROS_INFO_THROTTLE(1.0, "Cartesian reflex error!");
-  }
+  if (msg.robot_mode == msg.ROBOT_MODE_REFLEX) { 
+      if (!has_reflex_error) ROS_INFO("Robot reflex error!");
+      has_reflex_error = true;
+    }
+    else
+      has_reflex_error = false;
 }
 
 void Robot::wrenchCallback(const geometry_msgs::WrenchStamped& msg) {
@@ -74,9 +76,6 @@ bool Robot::recoverFromErrors() {
   ac.sendGoal(goal);
 
   bool success = ac.waitForResult(ros::Duration(5.0));
-  if (success) {
-    has_reflex_error = false;
-  }
   return success;
 }
 
